@@ -8,6 +8,7 @@ GludConfig is a attempt to rewrite GSettings in rust with additional features. S
 - [x] Automatic Code Generation
 - [x] Macro-Based Schema Definition
 - [x] DBus Interface
+- [ ] Protection Against External Changes (TODO, Planned)
 - [ ] Cli Interface (TODO, Planned)
 - [x] Triggers/Signals
 - [ ] Enum Support: _Although custom enums can be used through zvariant and serde magic, first-class support is still not there._ (TODO).
