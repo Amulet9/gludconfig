@@ -176,7 +176,9 @@ mod interface {
                     )))?;
             let was_reset = property.reset();
             self.sync_db(&schema).await?;
-            Self::property_changed(&ctx, schema_name, key_name).await?;
+            if was_reset {
+                Self::property_changed(&ctx, schema_name, key_name).await?
+            };
             Ok(was_reset)
         }
 
@@ -188,7 +190,6 @@ mod interface {
                 .map_err(|errr| zbus::fdo::Error::Failed(format!("{}", errr)))?
                 .into_iter()
                 .map(|schema| (schema.name().to_string(), schema.version()));
-
             Ok(schemas.collect())
         }
 
@@ -203,9 +204,14 @@ mod interface {
             for property in schema.iter_properties_mut() {
                 if !property.reset() {
                     _bool = false;
-                }
-                Self::property_changed(&ctx, schema_name.to_string(), property.name().to_string())
+                } else {
+                    Self::property_changed(
+                        &ctx,
+                        schema_name.to_string(),
+                        property.name().to_string(),
+                    )
                     .await?;
+                }
             }
             self.sync_db(&schema).await?;
             Ok(_bool)
@@ -216,6 +222,7 @@ mod interface {
 #[cfg(feature = "dbus")]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let hello = 5;
     let mut connection = gsd_rs::storage::Storage::new().await?;
     let connection = zbus::ConnectionBuilder::session()?
         .name("org.glud.GludConfig")?

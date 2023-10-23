@@ -4,7 +4,8 @@ use gsd_rs::value::Value;
 use zvariant::OwnedValue;
 
 
-fn main() {}
+fn main() {
+}
 
 #[cfg(feature = "tests")]
 #[derive(serde::Serialize, Debug, serde::Deserialize, zvariant::Type, zvariant::Value)]
