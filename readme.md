@@ -56,8 +56,12 @@ fn choices() -> Vec<Option<i32>> {
 #[tokio::main]
 async fn main() -> ::gsd_rs::Result<()> {
     let schema = Foo:schema()?;
-    // Foo::register_sync(&schema)?;
-    Foo::register_async(&schema).await?;
+
+    // let conn = zbus::blocking::Connection::session()?;
+    // Foo::register_sync(&schema, &conn)?;
+
+    let conn = zbus::Connection::session().await?;
+    Foo::register_async(&schema, &conn).await?;
     Ok(())
 }
 ```
@@ -85,5 +89,3 @@ trait Foo {
 ```
 
 this should generate the proper "reset", "read", "info", "changed" and "set" methods for the properties.
-
-

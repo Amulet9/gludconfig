@@ -4,7 +4,6 @@ use proc_macro_error::{abort, proc_macro_error};
 use syn::parse_macro_input;
 
 mod generate_code;
-mod error;
 mod schema;
 
 #[proc_macro_derive(Schema, attributes(schema, field, trigger))]

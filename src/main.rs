@@ -3,9 +3,7 @@ use std::collections::BTreeMap;
 use gsd_rs::value::Value;
 use zvariant::OwnedValue;
 
-
-fn main() {
-}
+fn main() {}
 
 #[cfg(feature = "tests")]
 #[derive(serde::Serialize, Debug, serde::Deserialize, zvariant::Type, zvariant::Value)]
@@ -15,7 +13,7 @@ enum ScaleMode {
 }
 
 #[cfg(feature = "tests")]
-#[derive(gsd_macros::Schema, Debug)]
+#[derive(glud_macros::Schema, Debug)]
 #[schema(name = "org.desktop.ui.wallpaper", version = 0.1)]
 struct WallpaperDaemon {
     #[field(
@@ -262,7 +260,7 @@ async fn test_generate_async() {
     use futures_util::StreamExt;
 
     let conn = zbus::Connection::session().await.unwrap();
-    #[gsd_macros::glud_interface(name = "org.desktop.ui.wallpaper", blocking = false)]
+    #[glud_macros::glud_interface(name = "org.desktop.ui.wallpaper", blocking = false)]
     trait WallpaperDaemon {
         #[property(name = "wallpaper_path")]
         async fn path() -> String;

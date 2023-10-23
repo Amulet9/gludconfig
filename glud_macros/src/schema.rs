@@ -73,15 +73,15 @@ pub fn expand(stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
             pub fn schema() -> ::gsd_rs::Result<::gsd_rs::schema::Schema>  {
                 #schema
             }
-            pub async fn register_async(schema: &::gsd_rs::schema::Schema, conn: ::zbus::Connection) -> ::gsd_rs::Result<()> {
-                let proxy = ::zbus::Proxy::new("org.glud.GludConfig", "/org/glud/gludconfig", "org.glud.GludConfig").await?;
+            pub async fn register_async(schema: &::gsd_rs::schema::Schema, conn: &::zbus::Connection) -> ::gsd_rs::Result<()> {
+                let proxy = ::zbus::Proxy::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig", "org.glud.GludConfig").await?;
                 let ctx = ::zbus::zvariant::EncodingContext::<::byteorder::LE>::new_dbus(0);
                 let bytes = ::zbus::zvariant::to_bytes(ctx, schema)?;
                 proxy.call::<_, _, ()>("RegisterSchema", &(bytes)).await?;
                 Ok(())
             }
-            pub fn register_sync(schema: &::gsd_rs::schema::Schema, conn: ::zbus::blocking::Connection) -> ::gsd_rs::Result<()> {
-                let proxy = ::zbus::blocking::Proxy::new("org.glud.GludConfig", "/org/glud/gludconfig", "org.glud.GludConfig")?;
+            pub fn register_sync(schema: &::gsd_rs::schema::Schema, conn: &::zbus::blocking::Connection) -> ::gsd_rs::Result<()> {
+                let proxy = ::zbus::blocking::Proxy::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig", "org.glud.GludConfig")?;
                 let ctx = ::zbus::zvariant::EncodingContext::<::byteorder::LE>::new_dbus(0);
                 let bytes = ::zbus::zvariant::to_bytes(ctx, schema)?;
                 proxy.call::<_, _, ()>("RegisterSchema", &(bytes))?;

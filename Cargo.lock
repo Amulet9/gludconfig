@@ -667,6 +667,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fb8d784f27acf97159b40fc4db5ecd8aa23b9ad5ef69cdd136d3bc80665f0c0"
 
 [[package]]
+name = "glud_macros"
+version = "0.1.0"
+dependencies = [
+ "darling",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.38",
+]
+
+[[package]]
 name = "gsd-rs"
 version = "0.1.0"
 dependencies = [
@@ -676,7 +687,7 @@ dependencies = [
  "bpaf",
  "byteorder",
  "futures-util",
- "gsd_macros",
+ "glud_macros",
  "homedir",
  "nix 0.27.1",
  "serde",
@@ -684,17 +695,6 @@ dependencies = [
  "tokio",
  "zbus",
  "zvariant",
-]
-
-[[package]]
-name = "gsd_macros"
-version = "0.1.0"
-dependencies = [
- "darling",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 2.0.38",
 ]
 
 [[package]]
