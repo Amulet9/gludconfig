@@ -1,5 +1,5 @@
 [package]
-name = "gsd-rs"
+name = "gludconfig"
 version = "0.1.0"
 edition = "2021"
 
@@ -31,7 +31,6 @@ nix = { version = "0.27.1", default-features = false, optional = true, features 
 futures-util = { version = "0.3.28", optional = true }
 
 [features]
-default = ["tests", "cli", "macros", "dbus"]
 tests = ["macros", "dbus"]
 cli = ["dep:tokio", "dep:bpaf"]
 macros = ["dep:glud_macros"]

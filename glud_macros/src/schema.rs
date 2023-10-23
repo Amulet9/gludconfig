@@ -70,17 +70,17 @@ pub fn expand(stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let schema = generate_schema(properties, triggers, options);
     let stream = quote::quote!(
         impl #ident {
-            pub fn schema() -> ::gsd_rs::Result<::gsd_rs::schema::Schema>  {
+            pub fn schema() -> ::gludconfig::Result<::gludconfig::schema::Schema>  {
                 #schema
             }
-            pub async fn register_async(schema: &::gsd_rs::schema::Schema, conn: &::zbus::Connection) -> ::gsd_rs::Result<()> {
+            pub async fn register_async(schema: &::gludconfig::schema::Schema, conn: &::zbus::Connection) -> ::gludconfig::Result<()> {
                 let proxy = ::zbus::Proxy::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig", "org.glud.GludConfig").await?;
                 let ctx = ::zbus::zvariant::EncodingContext::<::byteorder::LE>::new_dbus(0);
                 let bytes = ::zbus::zvariant::to_bytes(ctx, schema)?;
                 proxy.call::<_, _, ()>("RegisterSchema", &(bytes)).await?;
                 Ok(())
             }
-            pub fn register_sync(schema: &::gsd_rs::schema::Schema, conn: &::zbus::blocking::Connection) -> ::gsd_rs::Result<()> {
+            pub fn register_sync(schema: &::gludconfig::schema::Schema, conn: &::zbus::blocking::Connection) -> ::gludconfig::Result<()> {
                 let proxy = ::zbus::blocking::Proxy::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig", "org.glud.GludConfig")?;
                 let ctx = ::zbus::zvariant::EncodingContext::<::byteorder::LE>::new_dbus(0);
                 let bytes = ::zbus::zvariant::to_bytes(ctx, schema)?;
@@ -146,10 +146,10 @@ fn generate_for_trigger(
     TriggerInput { name, ty, ident }: TriggerInput,
 ) -> proc_macro2::TokenStream {
     let name = name.unwrap_or(ident.to_token_stream().to_string());
-    let sig = quote::quote!(<#ty as ::gsd_rs::zvariant::Type>::signature());
+    let sig = quote::quote!(<#ty as ::gludconfig::zvariant::Type>::signature());
 
     return quote::quote!(
-        ::gsd_rs::trigger::Trigger::new(#name.to_string(), #sig)
+        ::gludconfig::trigger::Trigger::new(#name.to_string(), #sig)
     );
 }
 
@@ -166,13 +166,13 @@ fn generate_for_property(property: PropertyInput) -> proc_macro2::TokenStream {
 
     let default = property.default.map(|ident |{
         quote::quote!(
-            .default(::gsd_rs::value::Value::new(#ident (), <#sig as ::gsd_rs::zvariant::Type>::signature())?)
+            .default(::gludconfig::value::Value::new(#ident (), <#sig as ::gludconfig::zvariant::Type>::signature())?)
         )
     }).unwrap_or_default();
 
     let value = property.value.map(|ident| {
         quote::quote!(
-            .value(::gsd_rs::value::Value::new(#ident (), <#sig as ::gsd_rs::zvariant::Type>::signature())?)
+            .value(::gludconfig::value::Value::new(#ident (), <#sig as ::gludconfig::zvariant::Type>::signature())?)
         )
     }).unwrap_or_default();
 
@@ -180,19 +180,19 @@ fn generate_for_property(property: PropertyInput) -> proc_macro2::TokenStream {
         .choices
         .map(|ident| {
             quote::quote!(
-                .choices_sig(<#sig as ::gsd_rs::zvariant::Type>::signature(), #ident ())
+                .choices_sig(<#sig as ::gludconfig::zvariant::Type>::signature(), #ident ())
             )
         })
         .unwrap_or_default();
 
     let stream = quote::quote!(
-        ::gsd_rs::property::Property::builder()
+        ::gludconfig::property::Property::builder()
             .name(#name.to_string())
             .about(#about.to_string())
             .long_about(#long_about.to_string())
             .show_in_settings(#show_in_settings)
             .writable(#writable)
-            .signature(<#sig as ::gsd_rs::zvariant::Type>::signature())
+            .signature(<#sig as ::gludconfig::zvariant::Type>::signature())
             #default
             #value
             #choices
@@ -231,7 +231,7 @@ fn generate_schema<'a>(
     let name = schema_input.name;
     let version = schema_input.version;
     let stream = quote::quote!(
-        Ok(::gsd_rs::schema::Schema::builder()
+        Ok(::gludconfig::schema::Schema::builder()
             .name(#name.to_string())
             .version(#version)
             .properties(::std::vec![#(#properties),*])

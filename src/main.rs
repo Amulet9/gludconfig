@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use gsd_rs::value::Value;
+use gludconfig::value::Value;
 use zvariant::OwnedValue;
 
 fn main() {}
@@ -64,7 +64,7 @@ pub fn wallpaper_default() -> Option<String> {
 #[cfg(feature = "tests")]
 #[tokio::test]
 async fn test_fetch_all() {
-    use gsd_rs::storage::Storage;
+    use gludconfig::storage::Storage;
 
     let mut db = Storage::new().await.unwrap();
     let schemas = db.fetch_all();
@@ -74,7 +74,7 @@ async fn test_fetch_all() {
 #[cfg(feature = "tests")]
 #[tokio::test]
 async fn test_crud_speed() {
-    use gsd_rs::storage::Storage;
+    use gludconfig::storage::Storage;
 
     let mut k = 0;
     let mut db = Storage::new().await.unwrap();
@@ -87,7 +87,7 @@ async fn test_crud_speed() {
         schema
             .get_property_mut("wallpaper_path")
             .unwrap()
-            .set_value(gsd_rs::value::Value::wrap(Some(format!("{}", i))))
+            .set_value(gludconfig::value::Value::wrap(Some(format!("{}", i))))
             .unwrap();
 
         db.update_schema(&schema).await.unwrap();
@@ -97,7 +97,7 @@ async fn test_crud_speed() {
 #[cfg(feature = "tests")]
 #[tokio::test]
 async fn test_read_speed() {
-    use gsd_rs::storage::Storage;
+    use gludconfig::storage::Storage;
     use serde::de;
     let mut db = Storage::new().await.unwrap();
     for i in 1..10000 {
@@ -113,7 +113,7 @@ async fn test_read_speed() {
 #[cfg(feature = "tests")]
 #[tokio::test]
 async fn test_duplicate() {
-    use gsd_rs::{schema, storage::Storage};
+    use gludconfig::{schema, storage::Storage};
 
     let schema = WallpaperDaemon::schema().unwrap();
     let mut db = Storage::new().await.unwrap();
@@ -135,7 +135,7 @@ async fn test_homepath() {
 #[cfg(feature = "tests")]
 #[tokio::test]
 async fn test_fetch_schema() {
-    use gsd_rs::storage::Storage;
+    use gludconfig::storage::Storage;
 
     let mut db = Storage::new().await.unwrap();
     let schema = db.get_schema("org.desktop.ui.wallpaper".to_string()).await;
@@ -146,7 +146,7 @@ async fn test_fetch_schema() {
 #[cfg(feature = "tests")]
 #[tokio::test]
 async fn test_update_writable_property() {
-    use gsd_rs::{storage::Storage, value::*};
+    use gludconfig::{storage::Storage, value::*};
     let mut db = Storage::new().await.unwrap();
     let mut schema = db
         .get_schema("org.desktop.ui.wallpaper".to_string())
@@ -168,7 +168,7 @@ async fn test_update_writable_property() {
 #[cfg(feature = "tests")]
 #[tokio::test]
 async fn test_signal() {
-    use gsd_rs::{storage::Storage, value::*};
+    use gludconfig::{storage::Storage, value::*};
     use zvariant::OwnedValue;
     let mut db = Storage::new().await.unwrap();
     let mut schema = db
@@ -189,7 +189,7 @@ async fn test_signal() {
 #[cfg(feature = "tests")]
 #[tokio::test]
 async fn test_update_unwritable_property() {
-    use gsd_rs::{storage::Storage, value::*};
+    use gludconfig::{storage::Storage, value::*};
     let mut db = Storage::new().await.unwrap();
     let mut schema = db
         .get_schema("org.desktop.ui.wallpaper".to_string())
@@ -203,7 +203,7 @@ async fn test_update_unwritable_property() {
 #[cfg(feature = "tests")]
 #[tokio::test]
 async fn test_choices_property() {
-    use gsd_rs::{storage::Storage, value::*};
+    use gludconfig::{storage::Storage, value::*};
     let mut db = Storage::new().await.unwrap();
     let mut schema = db
         .get_schema("org.desktop.ui.wallpaper".to_string())

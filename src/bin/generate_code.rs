@@ -1,6 +1,6 @@
 #[cfg(feature = "cli")]
 mod gen_code {
-    use gsd_rs::schema::Schema;
+    use gludconfig::schema::Schema;
     use zvariant::Basic;
     use zvariant::Signature;
 
@@ -160,7 +160,7 @@ mod gen_code {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     use bpaf::Parser;
-    use gsd_rs::storage::Storage;
+    use gludconfig::storage::Storage;
 
     let options = gen_code::gencode().run();
     let mut storage = Storage::new().await?;

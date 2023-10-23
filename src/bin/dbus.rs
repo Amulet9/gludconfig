@@ -2,7 +2,7 @@
 mod interface {
     use std::collections::BTreeMap;
 
-    use gsd_rs::{
+    use gludconfig::{
         error::ZbusError, property::Property, schema::Schema, storage::Storage, trigger::Trigger,
         value::Nullable,
     };
@@ -98,8 +98,8 @@ mod interface {
                         &schema_name,
                         &key_name,
                     )))?;
-            let value: gsd_rs::value::Value =
-                ::gsd_rs::value::Value::new::<OwnedValue>(set_value.into(), property.signature())
+            let value: gludconfig::value::Value =
+                ::gludconfig::value::Value::new::<OwnedValue>(set_value.into(), property.signature())
                     .map_err(|err| zbus::fdo::Error::Failed(format!("{}", err)))?;
 
             property
@@ -223,7 +223,7 @@ mod interface {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let hello = 5;
-    let mut connection = gsd_rs::storage::Storage::new().await?;
+    let mut connection = gludconfig::storage::Storage::new().await?;
     let connection = zbus::ConnectionBuilder::session()?
         .name("org.glud.GludConfig")?
         .serve_at(
