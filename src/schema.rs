@@ -24,11 +24,19 @@ impl Schema {
         self.version
     }
 
-    pub fn iter_properties_mut(&mut self) -> impl Iterator<Item = &mut Property> {
+    pub fn triggers(&self) -> impl Iterator<Item = &Trigger> {
+        self.triggers.iter()
+    }
+
+    pub fn properties(&self) -> impl Iterator<Item = &Property> {
+        self.properties.iter()
+    }
+
+    pub fn properties_mut(&mut self) -> impl Iterator<Item = &mut Property> {
         self.properties.iter_mut()
     }
 
-    pub fn iter_triggers_mut(&mut self) -> impl Iterator<Item = &mut Trigger> {
+    pub fn triggers_mut(&mut self) -> impl Iterator<Item = &mut Trigger> {
         self.triggers.iter_mut()
     }
 
@@ -38,22 +46,6 @@ impl Schema {
 
     pub fn into_properties(self) -> impl Iterator<Item = Property> {
         self.properties.into_iter()
-    }
-
-    pub fn get_property_mut(&mut self, name: &str) -> Option<&mut Property> {
-        self.properties.iter_mut().find(|p| p.name() == name)
-    }
-
-    pub fn get_property(&self, name: &str) -> Option<&Property> {
-        self.properties.iter().find(|p| p.name() == name)
-    }
-
-    pub fn get_trigger(&self, name: &str) -> Option<&Trigger> {
-        self.triggers.iter().find(|t| t.name() == name)
-    }
-
-    pub fn get_trigger_mut(&mut self, name: &str) -> Option<&mut Trigger> {
-        self.triggers.iter_mut().find(|t| t.name() == name)
     }
 }
 

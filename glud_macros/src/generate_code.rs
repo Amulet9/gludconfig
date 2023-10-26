@@ -74,23 +74,27 @@ pub fn generate_schema(
         .then(|| quote::quote!(::zbus::blocking::Proxy))
         .unwrap_or(quote::quote!(::zbus::Proxy));
 
-    let new_fn = blocking.then(|| quote::quote!(
-        fn new(conn: &zbus::blocking::Connection) -> ::zbus::Result<#ident> {
+    let (_async, _await) = blocking
+        .then(|| (Default::default(), Default::default()))
+        .unwrap_or((quote::quote!(async), quote::quote!(.await)));
+
+    let conn_ty = blocking.then(|| quote::quote!(&zbus::blocking::Connection)).unwrap_or(quote::quote!(&zbus::Connection));
+
+    let new_fn = quote::quote!(
+        #vis #_async fn new(conn: #conn_ty) -> ::zbus::Result<#ident> {
             Ok(Self {
-                proxy: #ty::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig", "org.glud.GludConfig")?
+                schema_proxy: #ty::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig/schema", "org.glud.GludConfig.Schema")#_await?,
+                property_proxy:  #ty::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig/property", "org.glud.GludConfig.Property")#_await?,
+                trigger_proxy:  #ty::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig/trigger", "org.glud.GludConfig.Trigger")#_await?,
             })
         }
-    )).unwrap_or(quote::quote!(
-        async fn new(conn: &zbus::Connection) -> ::zbus::Result<#ident> {
-            Ok(Self {
-                proxy: #ty::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig", "org.glud.GludConfig").await?
-            })
-        }
-    ));
+    );
 
     let stream = quote::quote!(
         #vis struct #ident {
-            proxy: #ty<'static>
+            schema_proxy: #ty<'static>,
+            property_proxy: #ty<'static>,
+            trigger_proxy: #ty<'static>,
         }
 
         impl #ident {
@@ -137,8 +141,7 @@ pub fn generate_for_function(
         FunctionType::Trigger => {
             let emit_trigger_ident = format_ident!("{}", ident);
             let listen_trigger_ident = format_ident!("{}_occured", ident);
-            let change_struct_event = format_ident!("{}ChangeStream", ident);
-
+            let info_ident = format_ident!("{}_info", ident);
             let trigger_occur_ty = blocking
                 .then(|| quote::quote!(::zbus::blocking::SignalIterator<'static>))
                 .unwrap_or(quote::quote!(::zbus::SignalStream<'static>));
@@ -147,11 +150,15 @@ pub fn generate_for_function(
                 impl #schema_ident {
                     pub #_async fn #emit_trigger_ident #generics(&self, value: #target_ty) -> ::zbus::Result<()> {
                         let value = ::zbus::zvariant::Value::new(value).to_owned();
-                        self.proxy.call::<_, _, ()>("Trigger", &(#schema_name, #name, value))#_await
+                        self.trigger_proxy.call::<_, _, ()>("trigger", &(#schema_name, #name, value))#_await
                     }
 
                     pub #_async fn #listen_trigger_ident #generics(&self) -> ::zbus::Result<#trigger_occur_ty> {
-                        self.proxy.receive_signal("TriggerInvoked")#_await
+                        self.trigger_proxy.receive_signal("trigger_invoked")#_await
+                    }
+
+                    pub #_async fn #info_ident #generics(&self) -> ::zbus::Result<(String, ::zbus::zvariant::OwnedSignature)> {
+                        self.trigger_proxy.call("metadata", &(#schema_name, #name))#_await
                     }
                 }
             );
@@ -159,7 +166,6 @@ pub fn generate_for_function(
             stream
         }
         FunctionType::Property => {
-            let get_ident = format_ident!("{}", ident);
             let set_ident = format_ident!("set_{}", ident);
             let reset_ident = format_ident!("reset_{}", ident);
             let info_ident = format_ident!("info_{}", ident);
@@ -171,35 +177,23 @@ pub fn generate_for_function(
 
             let stream = quote::quote!(
                 impl #schema_ident {
-                    pub #_async fn #info_ident #generics(&self) -> ::zbus::Result<(bool, String, String, bool, ::zbus::zvariant::OwnedSignature)> {
-                        self.proxy.call::<_, _, (bool, String, String, bool, ::zbus::zvariant::OwnedSignature)>("Info", &(#schema_name, #name))#_await
+                    pub #_async fn #info_ident #generics(&self) -> ::zbus::Result<(bool, String, String, bool, ::zbus::zvariant::OwnedSignature, (bool, ::zbus::zvariant::OwnedValue))> {
+                        self.property_proxy.call::<_, _, (bool, String, String, bool, ::zbus::zvariant::OwnedSignature, (bool, ::zbus::zvariant::OwnedValue))>("metadata", &(#schema_name, #name))#_await
                     }
 
                     pub #_async fn #change_ident #generics(&self) -> ::zbus::Result<#change_ty> {
-                        self.proxy.receive_signal_with_args("PropertyChanged", &[(0, #schema_name), (1, #name)])#_await
+                        self.property_proxy.receive_signal_with_args("property_changed", &[(0, #schema_name), (1, #name)])#_await
                     }
 
-                    pub #_async fn #get_ident #generics(&self) -> ::zbus::Result<Option<#target_ty>> {
-                        let (is_null, value) = self.proxy.call::<_, _, (bool, ::zbus::zvariant::OwnedValue)>("Read", &(#schema_name, #name))#_await?;
-                        if is_null {
-                            return Ok(None)
-                        } else {
-                            let value = match ::std::convert::Into::<::zbus::zvariant::Value<'static>>::into(value) {
-                               ::zbus::zvariant::Value::Value(v) => <#target_ty>::try_from(*v).ok(),
-                                other => <#target_ty>::try_from(other).ok(),
-                            };
-                            return Ok(value)
-                        }
-                    }
                     pub #_async fn #set_ident #generics(&self, value: ::core::option::Option<#target_ty>) -> ::zbus::Result<()> {
                         let (is_null, value) = match value {
                             None => (true, ::zbus::zvariant::Value::from(true).to_owned()),
                             Some(value) => (false, ::zbus::zvariant::Value::from(value).to_owned()),
                         };
-                        Ok(self.proxy.call::<_, _, ()>("Set", &(#schema_name, #name, (is_null, value)))#_await?)
+                        Ok(self.property_proxy.call::<_, _, ()>("set", &(#schema_name, #name, (is_null, value)))#_await?)
                     }
                     pub #_async fn #reset_ident #generics(&self) -> ::zbus::Result<bool> {
-                        let value = self.proxy.call::<_, _, bool>("Reset", &(#schema_name, #name))#_await?;
+                        let value = self.property_proxy.call::<_, _, bool>("reset", &(#schema_name, #name))#_await?;
                         Ok(value)
                     }
 

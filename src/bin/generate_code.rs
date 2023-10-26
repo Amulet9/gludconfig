@@ -122,25 +122,25 @@ mod gen_code {
     ) -> anyhow::Result<()> {
         writeln!(
             write,
-            "#[gsd_macros::glud_interface(name = \"{}\"), blocking = {}]",
+            "#[gsd_macros::glud_interface(name = \"{}\", blocking = {})]",
             schema.name(),
             blocking
         )?;
         writeln!(write, "trait {} {{", name)?;
 
-        for property in schema.iter_properties_mut() {
+        for property in schema.properties() {
             writeln!(write, "    #[property(name = \"{}\")]", property.name())?;
             let _async = blocking.then(|| "").unwrap_or("async");
             writeln!(
                 write,
-                "    pub{} fn {}() -> {};",
+                "    pub {} fn {}() -> {};",
                 _async,
                 property.name(),
                 to_rust_type(&property.signature(), false, false)
             )?;
         }
 
-        for trigger in schema.iter_triggers_mut() {
+        for trigger in schema.triggers() {
             writeln!(write, "    #[trigger(name = \"{}\")]", trigger.name())?;
             let _async = blocking.then(|| "").unwrap_or("async");
             writeln!(
@@ -156,7 +156,7 @@ mod gen_code {
     }
 }
 
-#[cfg(all(feature = "dbus", feature = "cli"))]
+#[cfg(feature = "cli")]
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     use bpaf::Parser;
@@ -176,7 +176,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(any(not(feature = "dbus"), not(feature = "cli")))]
+#[cfg(not(feature = "cli"))]
 fn main() {
     panic!("Code compiled without dbus or cli feature")
 }

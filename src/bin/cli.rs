@@ -5,14 +5,11 @@ mod cli {
     use bpaf::*;
 
     #[derive(Debug, Clone, Bpaf)]
-    pub struct Options {
-        // Get {}   
-    }
+    pub struct GludCli {}
 }
 
 #[cfg(feature = "cli")]
 fn main() {
-    // zvariant::Value
     // println!("{:?}", options().run())
 }
 

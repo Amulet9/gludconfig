@@ -31,7 +31,7 @@ impl RustQliteImpl {
 
 #[async_trait::async_trait]
 impl StorageBackend for RustQliteImpl {
-    async fn delete_schema(&mut self, name: String) -> anyhow::Result<()> {
+    async fn delete_schema(&self, name: String) -> anyhow::Result<()> {
         Ok(self
             .connection
             .call(move |conn| {
@@ -42,7 +42,7 @@ impl StorageBackend for RustQliteImpl {
             })
             .await?)
     }
-    async fn fetch_all(&mut self) -> anyhow::Result<Vec<(String, Vec<u8>)>> {
+    async fn fetch_all(&self) -> anyhow::Result<Vec<(String, Vec<u8>)>> {
         Ok(self
             .connection
             .call(move |conn| {
@@ -58,7 +58,7 @@ impl StorageBackend for RustQliteImpl {
             .await?)
     }
 
-    async fn new_schema(&mut self, name: String, data: Vec<u8>) -> anyhow::Result<()> {
+    async fn new_schema(&self, name: String, data: Vec<u8>) -> anyhow::Result<()> {
         self.connection
             .call(move |conn| {
                 let mut statement =
@@ -69,7 +69,7 @@ impl StorageBackend for RustQliteImpl {
         Ok(())
     }
 
-    async fn update_schema(&mut self, name: String, data: Vec<u8>) -> anyhow::Result<()> {
+    async fn update_schema(&self, name: String, data: Vec<u8>) -> anyhow::Result<()> {
         self.connection
             .call(move |conn| {
                 let mut statement =
@@ -80,7 +80,7 @@ impl StorageBackend for RustQliteImpl {
         Ok(())
     }
 
-    async fn fetch_schema(&mut self, name: String) -> anyhow::Result<Vec<u8>> {
+    async fn fetch_schema(&self, name: String) -> anyhow::Result<Vec<u8>> {
         let s = self
             .connection
             .call(move |conn| {
@@ -94,6 +94,7 @@ impl StorageBackend for RustQliteImpl {
                 Result::<_, async_rusqlite::Error>::Ok(row.next())
             })
             .await?;
+        
         if let Some(s) = s {
             Ok(s?)
         } else {

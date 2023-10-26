@@ -27,6 +27,12 @@ impl PartialEq for Property {
     }
 }
 
+impl Into<Value> for Property {
+    fn into(self) -> Value {
+        self.current
+    }
+}
+
 impl Property {
     pub fn name(&self) -> &str {
         &self.name
@@ -49,12 +55,6 @@ impl Property {
         self.current.get_inner()
     }
 
-    pub fn into_value(self) -> Value {
-        self.current
-    }
-
-    /// Sets the value to the provided value, if it is a acceptable choices.
-    /// Returns a error if it is not
     pub fn set_value(&mut self, value: Value) -> anyhow::Result<()> {
         if !self.writable {
             return Err(
@@ -182,10 +182,9 @@ impl PropertyBuilder {
 }
 
 impl PropertyBuilder {
-    pub fn build(mut self) -> anyhow::Result<Property> {
+    pub fn build(self) -> anyhow::Result<Property> {
         let writable = self.writable.unwrap_or(true);
         let show_in_settings = self.show_in_settings.unwrap_or(true);
-
         let signature = builder_get!(
             self,
             signature,

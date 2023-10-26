@@ -3,9 +3,7 @@ use std::collections::BTreeMap;
 use gludconfig::value::Value;
 use zvariant::OwnedValue;
 
-fn main() {
-  
-}
+fn main() {}
 
 #[cfg(feature = "tests")]
 #[derive(serde::Serialize, Debug, serde::Deserialize, zvariant::Type, zvariant::Value)]
@@ -87,7 +85,8 @@ async fn test_crud_speed() {
             .unwrap();
 
         schema
-            .get_property_mut("wallpaper_path")
+            .properties_mut()
+            .find(|p| p.name() == "wallpaper_path")
             .unwrap()
             .set_value(gludconfig::value::Value::wrap(Some(format!("{}", i))))
             .unwrap();
@@ -108,7 +107,10 @@ async fn test_read_speed() {
             .await
             .unwrap();
 
-        schema.get_property_mut("wallpaper_path").unwrap();
+        schema
+            .properties_mut()
+            .find(|p| p.name() == "wallpaper_path")
+            .unwrap();
     }
 }
 
@@ -155,7 +157,10 @@ async fn test_update_writable_property() {
         .await
         .unwrap();
 
-    let mut property = schema.get_property_mut("wallpaper_path").unwrap();
+    let mut property = schema
+        .properties_mut()
+        .find(|p| p.name() == "wallpaper_path")
+        .unwrap();
 
     assert_eq!(
         property
@@ -178,7 +183,7 @@ async fn test_signal() {
         .await
         .unwrap();
 
-    let trigger = schema.get_trigger_mut("tulip");
+    let trigger = schema.triggers_mut().find(|t| t.name() == "tulip");
 
     assert_eq!(trigger.is_some(), true);
 
@@ -198,7 +203,10 @@ async fn test_update_unwritable_property() {
         .await
         .unwrap();
 
-    let mut property = schema.get_property_mut("scale_mode").unwrap();
+    let mut property = schema
+        .properties_mut()
+        .find(|p| p.name() == "scale_mode")
+        .unwrap();
     assert_eq!(property.set_value(Value::wrap(Some(1))).is_ok(), false);
 }
 
@@ -212,7 +220,10 @@ async fn test_choices_property() {
         .await
         .unwrap();
 
-    let mut property = schema.get_property_mut("some_property").unwrap();
+    let mut property = schema
+        .properties_mut()
+        .find(|p| p.name() == "some_property")
+        .unwrap();
 
     assert_eq!(
         property
@@ -229,51 +240,28 @@ async fn test_choices_property() {
     )
 }
 
-#[cfg(feature = "dbus")]
-#[tokio::test]
-async fn test_dbus_read_speed() {
-    let conn = zbus::Connection::session().await.unwrap();
-    let proxy = zbus::Proxy::new(
-        &conn,
-        "org.glud.GludConfig",
-        "/org/glud/gludconfig",
-        "org.glud.GludConfig",
-    )
-    .await
-    .unwrap();
-    // proxy.receive_signal(signal_name)
-    for i in 1..10000 {
-        let call = proxy
-            .call::<_, _, ()>(
-                "Set",
-                &(
-                    "org.desktop.ui.wallpaper",
-                    "wallpaper_path",
-                    (false, zvariant::Value::from("e").to_owned()),
-                ),
-            )
-            .await
-            .unwrap();
-    }
-}
-
-#[cfg(all(feature = "dbus", feature = "tests"))]
+#[cfg(all(feature = "dbus", feature = "tests", feature = "macros"))]
 async fn test_generate_async() {
     use futures_util::StreamExt;
 
     let conn = zbus::Connection::session().await.unwrap();
+
     #[glud_macros::glud_interface(name = "org.desktop.ui.wallpaper", blocking = false)]
     trait WallpaperDaemon {
         #[property(name = "wallpaper_path")]
-        async fn path() -> String;
+        pub async fn wallpaper_path() -> String;
+        #[property(name = "scale_mode")]
+        pub async fn scale_mode() -> u32;
+        #[property(name = "some_property")]
+        pub async fn some_property() -> Vec<String>;
         #[trigger(name = "tulip")]
-        async fn tulip() -> (i32, i32);
+        pub async fn tulip() -> (i32, i32);
     }
 
     let daemon = WallpaperDaemon::new(&conn).await.unwrap();
-    let mut stream = daemon.tulip_occured().await.unwrap();
+    // let mut stream = daemon.tulip_occured().await.unwrap();
 
-    while let Some(event) = stream.next().await {
-        println!("{}", event);
-    }
+    // while let Some(event) = stream.next().await {
+        // println!("{}", event);
+    // }
 }

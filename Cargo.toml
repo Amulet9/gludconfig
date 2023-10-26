@@ -31,7 +31,7 @@ nix = { version = "0.27.1", default-features = false, optional = true, features 
 futures-util = { version = "0.3.28", optional = true }
 
 [features]
-default = ["cli"]
+default = ["cli", "macros", "tests"]
 tests = ["macros"]
 cli = ["dep:tokio", "dep:bpaf", "dbus"]
 macros = ["dep:glud_macros"]
