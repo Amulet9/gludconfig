@@ -89,12 +89,11 @@ impl SchemaBuilder {
     }
 
     pub fn trigger(mut self, trigger: Trigger) -> Self {
-        match self.triggers.contains(&trigger) {
-            true => panic!("Attempt to push duplicate trigger"),
-            false => {
-                self.triggers.push(trigger);
-            }
-        }
+        self.triggers
+            .contains(&trigger)
+            .then(|| panic!("Attempt to push duplicate trigger"))
+            .unwrap_or_else(|| self.triggers.push(trigger));
+
         self
     }
 

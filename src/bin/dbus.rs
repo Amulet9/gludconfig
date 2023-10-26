@@ -61,12 +61,12 @@ mod interface {
                     )))?;
             if trigger.matches(&value) {
                 Self::trigger_invoked(&ctx, schema_name, value).await?;
+                return Ok(());
             } else {
                 return Err(zbus::fdo::Error::Failed(format!(
                     "The signature of the trigger and the provided value dont match"
                 )));
             }
-            Ok(())
         }
 
         #[dbus_interface(signal)]
@@ -98,9 +98,11 @@ mod interface {
                         &schema_name,
                         &key_name,
                     )))?;
-            let value: gludconfig::value::Value =
-                ::gludconfig::value::Value::new::<OwnedValue>(set_value.into(), property.signature())
-                    .map_err(|err| zbus::fdo::Error::Failed(format!("{}", err)))?;
+            let value: gludconfig::value::Value = ::gludconfig::value::Value::new::<OwnedValue>(
+                set_value.into(),
+                property.signature(),
+            )
+            .map_err(|err| zbus::fdo::Error::Failed(format!("{}", err)))?;
 
             property
                 .set_value(value)
@@ -157,7 +159,7 @@ mod interface {
                     "{}",
                     ZbusError::PropertyNotFound(&schema_name, &key_name)
                 )))?;
-            Ok(property.into_value().into_nullabe())
+            Ok(property.into_value().into())
         }
 
         async fn reset(

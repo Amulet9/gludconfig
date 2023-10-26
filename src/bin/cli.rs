@@ -1,9 +1,22 @@
-#[cfg(any(not(feature = "dbus"), not(feature = "cli")))]
-fn main() {
-    panic!("Cli or dbus werent enabled while compiling")
+//! Simple dynamic completion example
+
+#[cfg(feature = "cli")]
+mod cli {
+    use bpaf::*;
+
+    #[derive(Debug, Clone, Bpaf)]
+    pub struct Options {
+        // Get {}   
+    }
 }
 
-#[cfg(all(feature = "dbus", feature = "cli"))]
+#[cfg(feature = "cli")]
 fn main() {
-    todo!()
+    // zvariant::Value
+    // println!("{:?}", options().run())
+}
+
+#[cfg(not(feature = "cli"))]
+fn main() {
+    panic!("Cli or dbus werent enabled while compiling")
 }

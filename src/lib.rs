@@ -9,9 +9,9 @@ pub mod value;
 pub use anyhow::Result;
 pub use serde;
 pub use zvariant;
-pub mod trigger;
 #[cfg(any(feature = "dbus", feature = "tests"))]
 pub mod storage;
+pub mod trigger;
 
 #[macro_export]
 macro_rules! builder_get {

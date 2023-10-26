@@ -24,7 +24,7 @@ Upon starting the dbus daemon, through the main user, it connects to `.local/sha
 - [ ] Awful code structure
 - [ ] Not user friendly enough, doesent provide service files or anything.
 - [ ] Code generation doesent auto deserialize signal body into the provided type. [Possible Fix: Generate custom struct per Trigger/Property]
-  
+
 # Register Schema
 
 ```rust
