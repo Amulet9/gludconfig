@@ -38,7 +38,6 @@ pub fn expand(
         Ok(e) => e,
         Err(v) => return v.into(),
     };
-
     let _functions = match _trait
         .items
         .into_iter()
@@ -56,12 +55,14 @@ pub fn expand(
         Err(e) => return e.into(),
     };
 
+    
     let schema = match generate_schema(args.name, &_trait.ident, &_trait.vis, args.blocking) {
         Ok(e) => e,
         Err(e) => return e.into(),
     };
 
-    quote::quote!( #schema #(#_functions)* ).into()
+   quote::quote!( #schema #(#_functions)* ).into()
+   
 }
 
 pub fn generate_schema(

@@ -122,7 +122,7 @@ mod gen_code {
     ) -> anyhow::Result<()> {
         writeln!(
             write,
-            "#[gsd_macros::glud_interface(name = \"{}\", blocking = {})]",
+            "#[glud_macros::glud_interface(name = \"{}\", blocking = {})]",
             schema.name(),
             blocking
         )?;
@@ -133,7 +133,7 @@ mod gen_code {
             let _async = blocking.then(|| "").unwrap_or("async");
             writeln!(
                 write,
-                "    pub {} fn {}() -> {};",
+                "    {} fn {}() -> {};",
                 _async,
                 property.name(),
                 to_rust_type(&property.signature(), false, false)
@@ -145,7 +145,7 @@ mod gen_code {
             let _async = blocking.then(|| "").unwrap_or("async");
             writeln!(
                 write,
-                "    pub{} fn {}() -> {};",
+                "    {} fn {}() -> {};",
                 _async,
                 trigger.name(),
                 to_rust_type(&trigger.signature(), false, false)

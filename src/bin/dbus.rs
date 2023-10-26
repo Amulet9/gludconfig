@@ -7,7 +7,7 @@ mod interface {
         value::Nullable,
     };
 
-    use zbus::{dbus_interface, SignalContext};
+    use zbus::{dbus_interface, SignalContext, names::BusName};
     use zvariant::{dbus, from_slice, OwnedSignature, OwnedValue, Signature};
 
     pub struct PropertyInterface {
@@ -51,11 +51,11 @@ mod interface {
                 if Property::reset(p) {
                     ctx.connection()
                         .emit_signal(
-                            Some("org.glud.GludConfig"),
+                            Option::<&BusName<'static>>::None,
                             "/org/glud/gludconfig/property",
-                            "org.glud.GludConfig.Property",
+                            <PropertyInterface as ::zbus::Interface>::name(),
                             "property_changed",
-                            &(schema_name.clone(), p.name().clone()),
+                            &(schema_name.to_string(), p.name().to_string()),
                         )
                         .await?;
                 } else {
@@ -176,7 +176,6 @@ mod interface {
                 )))?;
 
             let was_reset = property.reset();
-
             self.storage.update_schema(&schema).await?;
             if was_reset {
                 Self::property_changed(&ctx, schema_name, key_name).await?
@@ -203,9 +202,6 @@ mod interface {
         }
     }
 
-    pub struct Interface {
-        pub storage: Storage,
-    }
 
     #[derive(serde::Serialize, serde::Deserialize, zvariant::Type, zvariant::Value)]
     struct PropertyInfo {
@@ -269,51 +265,6 @@ mod interface {
                 name: value.name().to_string(),
                 trigger: value.signature().into(),
             }
-        }
-    }
-
-    impl Interface {
-        async fn get_schema_mut(&mut self, schema_name: &str) -> zbus::fdo::Result<Schema> {
-            let mut schema = self
-                .storage
-                .get_schema(schema_name.to_string())
-                .await
-                .map_err(|err| {
-                    Into::<zbus::fdo::Error>::into(ZbusError::SchemaNotFound(&schema_name))
-                })?;
-            Ok(schema)
-        }
-
-        async fn sync_db(&mut self, schema: &Schema) -> zbus::fdo::Result<()> {
-            self.storage
-                .update_schema(&schema)
-                .await
-                .map_err(|err| zbus::fdo::Error::Failed(format!("{}", err)))
-        }
-    }
-
-    #[dbus_interface(name = "org.glud.GludConfig.Property")]
-    impl Interface {
-        async fn register_schema(&mut self, binary: Vec<u8>) -> zbus::fdo::Result<()> {
-            let ctx = zvariant::EncodingContext::<byteorder::LE>::new_dbus(0);
-            let schema: Schema =
-                from_slice(&binary, ctx).map_err(|e| zbus::fdo::Error::Failed(format!("{}", e)))?;
-            self.storage
-                .new_schema(&schema)
-                .await
-                .map_err(|e| zbus::fdo::Error::Failed(format!("{}", e)))?;
-            Ok(())
-        }
-        #[dbus_interface(name = "list_schemas")]
-        async fn list_schemas(&mut self) -> zbus::fdo::Result<Vec<(String, f32)>> {
-            let mut schemas = self
-                .storage
-                .fetch_all()
-                .await
-                .map_err(|errr| zbus::fdo::Error::Failed(format!("{}", errr)))?
-                .into_iter()
-                .map(|schema| (schema.name().to_string(), schema.version()));
-            Ok(schemas.collect())
         }
     }
 }

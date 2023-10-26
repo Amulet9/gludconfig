@@ -3,7 +3,9 @@ use std::collections::BTreeMap;
 use gludconfig::value::Value;
 use zvariant::OwnedValue;
 
-fn main() {}
+fn main() {
+    
+}
 
 #[cfg(feature = "tests")]
 #[derive(serde::Serialize, Debug, serde::Deserialize, zvariant::Type, zvariant::Value)]
@@ -241,6 +243,7 @@ async fn test_choices_property() {
 }
 
 #[cfg(all(feature = "dbus", feature = "tests", feature = "macros"))]
+#[tokio::test]
 async fn test_generate_async() {
     use futures_util::StreamExt;
 
@@ -249,19 +252,19 @@ async fn test_generate_async() {
     #[glud_macros::glud_interface(name = "org.desktop.ui.wallpaper", blocking = false)]
     trait WallpaperDaemon {
         #[property(name = "wallpaper_path")]
-        pub async fn wallpaper_path() -> String;
+        async fn wallpaper_path() -> String;
         #[property(name = "scale_mode")]
-        pub async fn scale_mode() -> u32;
+        async fn scale_mode() -> u32;
         #[property(name = "some_property")]
-        pub async fn some_property() -> Vec<String>;
+        async fn some_property() -> Vec<String>;
         #[trigger(name = "tulip")]
-        pub async fn tulip() -> (i32, i32);
+        async fn tulip() -> (i32, i32);
     }
 
     let daemon = WallpaperDaemon::new(&conn).await.unwrap();
-    // let mut stream = daemon.tulip_occured().await.unwrap();
+    let mut stream = daemon.wallpaper_path_changed().await.unwrap();
 
-    // while let Some(event) = stream.next().await {
-        // println!("{}", event);
-    // }
+    while let Some(event) = stream.next().await {
+        println!("{}", event);
+    }
 }
