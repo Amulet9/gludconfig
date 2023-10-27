@@ -116,43 +116,132 @@ mod property {
 
 #[cfg(feature = "cli")]
 mod cli {
-    use bpaf::*;
+    use clap::{Parser, Subcommand};
+    use futures_util::StreamExt;
     use zvariant::OwnedValue;
 
     use crate::{property, schema, trigger};
 
-    #[derive(Debug, Clone, Bpaf)]
+    #[derive(Parser)]
+    #[command(
+        author = "gludconfig",
+        version,
+        name = "gludconfig",
+        about = "CLI Tool to interact with the gludconfig dbus daemon"
+    )]
     pub enum GludCli {
-        #[bpaf(command("info"))]
-        Info {
-            #[bpaf(positional("SCHEMA_NAME"))]
-            schema_name: String,
-            #[bpaf(positional("PROPERTY_NAME"))]
-            property_name: String,
-        },
-        #[bpaf(command("reset"))]
-        Reset {
-            #[bpaf(positional("SCHEMA_NAME"))]
-            schema_name: String,
-            #[bpaf(positional("PROPERTY_NAME"))]
-            property_name: String,
-        },
-        #[bpaf(command("monitor"))]
+        #[command(subcommand)]
+        Property(PropertyCommand),
+        #[command(subcommand)]
+        Schema(SchemaCommand),
+        #[command(subcommand)]
+        TriggerCommand(TriggerCommand),
+    }
+
+    #[derive(Subcommand)]
+    #[command(
+        name = "trigger",
+        author = "gludconfig",
+        version,
+        about = "Commands releated to triggers"
+    )]
+    pub enum TriggerCommand {
+        #[command(
+            name = "monitor",
+            author = "gludconfig",
+            version,
+            about = "Monitor triggers being triggered"
+        )]
         Monitor {
-            #[bpaf(short, long)]
-            trigger: bool,
-            #[bpaf(positional("SCHEMA_NAME"))]
             schema_name: String,
-            #[bpaf(positional("PROPERTY_NAME"))]
-            name: String,
+            trigger_name: String,
         },
-        #[bpaf(command("reset-recursively"))]
-        ResetRecursively {
-            #[bpaf(positional("SCHEMA_NAME"))]
+        #[command(
+            name = "metadata",
+            author = "gludconfig",
+            version,
+            about = "Provides metadata about a trigger, such as its signature"
+        )]
+        Metadata {
             schema_name: String,
+            trigger_name: String,
         },
-        #[bpaf(command("list-schemas"))]
-        ListSchemas,
+    }
+
+    #[derive(Subcommand)]
+    #[command(
+        name = "schema",
+        author = "gludconfig",
+        version,
+        about = "Commands releated to schemas"
+    )]
+    pub enum SchemaCommand {
+        #[command(
+            name = "list-schemas",
+            author = "gludconfig",
+            version,
+            about = "List all schemas along with their property and trigger names"
+        )]
+        ListAll,
+
+        #[command(
+            name = "metadata",
+            author = "gludconfig",
+            version,
+            about = "Get metadata about a schema! Including its property and trigger names!"
+        )]
+        Metadata { schema_name: String },
+
+        #[command(
+            name = "reset-recursively",
+            author = "gludconfig",
+            version,
+            about = "Reset all values in a schema recursively",
+            long_about = "Reset all values in a schema recursively! Returns false even if one of the keys is not writable!"
+        )]
+        ResetRecursively { schema_name: String },
+    }
+
+    #[derive(Subcommand)]
+    #[command(
+        name = "property",
+        author = "gludconfig",
+        version,
+        about = "Commands releated to properties"
+    )]
+    pub enum PropertyCommand {
+        #[command(
+            author = "gludconfig",
+            version,
+            name = "metadata",
+            about = "Get metadata for a property(including its current value). In Json Format"
+        )]
+        Metadata {
+            schema_name: String,
+            property_name: String,
+        },
+        #[command(
+            author = "gludconfig",
+            name = "reset",
+            version,
+            about = "Reset a property to its default value",
+            long_about = "Reset a property to its default value! Fails if property is not writable! If no default value is there, it will reset to `null`"
+        )]
+        Reset {
+            schema_name: String,
+            property_name: String,
+        },
+
+        #[command(
+            author = "gludconfig",
+            name = "monitor",
+            version,
+            about = "Monitor a property for changes!"
+        )]
+        Monitor {
+            schema_name: String,
+            property_name: String,
+        },
     }
 
     pub async fn list_schemas(conn: &zbus::Connection) -> anyhow::Result<String> {
@@ -201,57 +290,93 @@ mod cli {
         }
     }
 
-    pub async fn monitor(
+    pub async fn monitor_property(
         schema_name: String,
-        name: String,
-        trigger: bool,
+        property_name: String,
         conn: &zbus::Connection,
     ) -> anyhow::Result<String> {
         use futures_util::StreamExt;
+        let proxy = property::PropertyProxy::new(&conn).await?;
+        let mut signal: property::property_changedStream<'_> = proxy
+            .receive_property_changed_with_args(&[(0, &schema_name), (1, &property_name)])
+            .await?;
 
-        if !trigger {
-            let proxy = property::PropertyProxy::new(&conn).await?;
-            let mut signal: property::property_changedStream<'_> = proxy
-                .receive_property_changed_with_args(&[(0, &schema_name), (1, &name)])
-                .await?;
+        let mut current_property =
+            convert_property_to_serde(proxy.metadata(&schema_name, &property_name).await?.6)?;
 
-            let mut current_property =
-                convert_property_to_serde(proxy.metadata(&schema_name, &name).await?.6)?;
-
-            while let Some(change) = signal.next().await {
-                let new_value =
-                    convert_property_to_serde(proxy.metadata(&schema_name, &name).await?.6)?;
-                let json = serde_json::json!({
-                    "schema": &schema_name,
-                    "property": &name,
-                    "from": &current_property,
-                    "to": &new_value,
-                });
-                current_property = new_value;
-                println!("{}", serde_json::to_string_pretty(&json)?);
-            }
-        } else {
-            let mut proxy = trigger::TriggerProxy::new(&conn).await?;
-            let mut trigger = proxy
-                .receive_trigger_invoked_with_args(&[(0, &schema_name), (1, &name)])
-                .await?;
-            let mut metadata = proxy.metadata(&schema_name, &name).await?;
-
-            while let Some(trigger) = trigger.next().await {
-                let value = serde_json::to_value(trigger.args()?.value())?;
-                let json = serde_json::json!({
-                    "schema": &schema_name,
-                    "trigger": &name,
-                    "signature": &metadata.1,
-                    "args": value,
-                });
-                println!("{}", serde_json::to_string_pretty(&json)?);
-            }
+        while let Some(change) = signal.next().await {
+            let new_value =
+                convert_property_to_serde(proxy.metadata(&schema_name, &property_name).await?.6)?;
+            let json = serde_json::json!({
+                "schema": &schema_name,
+                "property": &property_name,
+                "from": &current_property,
+                "to": &new_value,
+            });
+            current_property = new_value;
+            println!("{}", serde_json::to_string_pretty(&json)?);
         }
-        anyhow::bail!("Signal Stream has ended")
+
+        anyhow::bail!("Property Stream has ended")
     }
 
-    pub async fn info(
+    pub async fn montior_trigger(
+        schema_name: String,
+        trigger_name: String,
+        conn: &zbus::Connection,
+    ) -> anyhow::Result<String> {
+        let mut proxy = trigger::TriggerProxy::new(&conn).await?;
+        let mut trigger = proxy
+            .receive_trigger_invoked_with_args(&[(0, &schema_name), (1, &trigger_name)])
+            .await?;
+        let mut metadata = proxy.metadata(&schema_name, &trigger_name).await?;
+
+        while let Some(trigger) = trigger.next().await {
+            let value = serde_json::to_value(trigger.args()?.value())?;
+            let json = serde_json::json!({
+                "schema": &schema_name,
+                "trigger": &trigger_name,
+                "signature": &metadata.1,
+                "args": value,
+            });
+            println!("{}", serde_json::to_string_pretty(&json)?);
+        }
+        anyhow::bail!("Trigger steam has ended")
+    }
+
+    pub async fn metadata_schema(
+        schema_name: String,
+        conn: &zbus::Connection,
+    ) -> anyhow::Result<String> {
+        let proxy = schema::SchemaProxy::new(&conn).await?;
+        let metadata = proxy.metadata(&schema_name).await?;
+
+        let json = serde_json::json!({
+            "name": &metadata.0,
+            "version": &metadata.1,
+            "triggers": &metadata.2,
+            "properties": &metadata.3,
+        });
+
+        Ok(serde_json::to_string_pretty(&json)?)
+    }
+
+    pub async fn metadata_trigger(
+        schema_name: String,
+        trigger_name: String,
+        conn: &zbus::Connection,
+    ) -> anyhow::Result<String> {
+        let mut proxy = trigger::TriggerProxy::new(&conn).await?;
+        let mut metadata = proxy.metadata(&schema_name, &trigger_name).await?;
+        let json = serde_json::json!({
+            "name": &metadata.0,
+            "signature": &metadata.1,
+        });
+
+        return Ok(serde_json::to_string_pretty(&json)?);
+    }
+
+    pub async fn metadata_property(
         schema_name: String,
         property_name: String,
         conn: &zbus::Connection,
@@ -279,28 +404,45 @@ mod cli {
 #[cfg(feature = "cli")]
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
-    use bpaf::Parser;
-    use cli::glud_cli;
+    use clap::Parser;
 
     let conn = zbus::Connection::session().await?;
-    let output = match glud_cli().run() {
-        cli::GludCli::Info {
-            schema_name,
-            property_name,
-        } => map_err_to_str(cli::info(schema_name, property_name, &conn).await),
-        cli::GludCli::Reset {
-            schema_name,
-            property_name,
-        } => map_err_to_str(cli::reset(schema_name, property_name, &conn).await),
-        cli::GludCli::Monitor {
-            schema_name,
-            name,
-            trigger,
-        } => map_err_to_str(cli::monitor(schema_name, name, trigger, &conn).await),
-        cli::GludCli::ResetRecursively { schema_name } => {
-            map_err_to_str(cli::reset_recursively(schema_name, &conn).await)
-        }
-        cli::GludCli::ListSchemas => map_err_to_str(cli::list_schemas(&conn).await),
+    let cmd = cli::GludCli::parse();
+
+    let output = match cmd {
+        cli::GludCli::Property(cmd) => match cmd {
+            cli::PropertyCommand::Metadata {
+                schema_name,
+                property_name,
+            } => map_err_to_str(cli::metadata_property(schema_name, property_name, &conn).await),
+            cli::PropertyCommand::Reset {
+                schema_name,
+                property_name,
+            } => map_err_to_str(cli::reset(schema_name, property_name, &conn).await),
+            cli::PropertyCommand::Monitor {
+                schema_name,
+                property_name,
+            } => map_err_to_str(cli::monitor_property(schema_name, property_name, &conn).await),
+        },
+        cli::GludCli::Schema(cmd) => match cmd {
+            cli::SchemaCommand::ListAll => map_err_to_str(cli::list_schemas(&conn).await),
+            cli::SchemaCommand::Metadata { schema_name } => {
+                map_err_to_str(cli::metadata_schema(schema_name, &conn).await)
+            }
+            cli::SchemaCommand::ResetRecursively { schema_name } => {
+                map_err_to_str(cli::reset_recursively(schema_name, &conn).await)
+            }
+        },
+        cli::GludCli::TriggerCommand(cmd) => match cmd {
+            cli::TriggerCommand::Monitor {
+                schema_name,
+                trigger_name,
+            } => map_err_to_str(cli::montior_trigger(schema_name, trigger_name, &conn).await),
+            cli::TriggerCommand::Metadata {
+                schema_name,
+                trigger_name,
+            } => map_err_to_str(cli::metadata_trigger(schema_name, trigger_name, &conn).await),
+        },
     };
 
     println!("{}", output);

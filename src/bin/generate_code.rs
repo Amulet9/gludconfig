@@ -6,14 +6,12 @@ mod gen_code {
 
    
 
-    #[derive(bpaf::Bpaf, Debug, Clone)]
-    
+    #[derive(clap::Parser, Debug, Clone)]
+    #[command(author = "gludconfig", version, about = "Tool to generate interfacing code with gludconfig schemas", long_about = None)]
     pub struct Gencode {
-        #[bpaf(short, long)]
+        #[arg(short, long)]
         pub blocking: bool,
-        #[bpaf(positional("SCHEMA"))]
         pub schema: String,
-        #[bpaf(positional("STRUCT_NAME"))]
         pub name: String,
     }
 
@@ -162,10 +160,10 @@ mod gen_code {
 #[cfg(feature = "cli")]
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
-    use bpaf::Parser;
+    use clap::Parser;
     use gludconfig::storage::Storage;
 
-    let options = gen_code::gencode().run();
+    let options = gen_code::Gencode::parse();
     let mut storage = Storage::new().await?;
     let mut schema = storage.get_schema(options.schema).await?;
 
