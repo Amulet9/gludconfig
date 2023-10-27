@@ -156,7 +156,7 @@ async fn test_update_writable_property() {
         .get_schema("org.desktop.ui.wallpaper".to_string())
         .await
         .unwrap();
-
+    
     let mut property = schema
         .properties_mut()
         .find(|p| p.name() == "wallpaper_path")
@@ -382,7 +382,7 @@ async fn test_dbus_register() {
     }
 
     let schema = Foo::schema().unwrap();
-    
+
     Foo::register_async(&schema, &zbus::Connection::session().await.unwrap())
         .await
         .unwrap();

@@ -5,6 +5,7 @@ mod gen_code {
     use zvariant::Signature;
 
     #[derive(bpaf::Bpaf, Debug, Clone)]
+
     pub struct Gencode {
         #[bpaf(short, long)]
         pub blocking: bool,

@@ -5,6 +5,7 @@ use syn::parse_macro_input;
 
 mod generate_code;
 mod schema;
+mod helper;
 
 #[proc_macro_derive(Schema, attributes(schema, field, trigger))]
 #[proc_macro_error]
