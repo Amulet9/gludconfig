@@ -30,6 +30,8 @@ impl Trigger {
     pub fn signature(&self) -> Signature<'static> {
         self.signature.deref().clone()
     }
+
+    
     pub fn matches(&self, value: &OwnedValue) -> bool {
         value.value_signature() == self.signature.as_str()
     }

@@ -3,9 +3,7 @@ use std::collections::BTreeMap;
 use gludconfig::value::Value;
 use zvariant::OwnedValue;
 
-fn main() {
-    
-}
+fn main() {}
 
 #[cfg(feature = "tests")]
 #[derive(serde::Serialize, Debug, serde::Deserialize, zvariant::Type, zvariant::Value)]
@@ -267,4 +265,125 @@ async fn test_generate_async() {
     while let Some(event) = stream.next().await {
         println!("{}", event);
     }
+}
+
+#[cfg(all(feature = "dbus", feature = "tests", feature = "macros"))]
+#[tokio::test]
+async fn test_dbus_read() {
+    use futures_util::StreamExt;
+
+    let conn = zbus::Connection::session().await.unwrap();
+
+    #[glud_macros::glud_interface(name = "org.desktop.ui.wallpaper", blocking = false)]
+    trait WallpaperDaemon {
+        #[property(name = "wallpaper_path")]
+        async fn wallpaper_path() -> String;
+        #[property(name = "scale_mode")]
+        async fn scale_mode() -> u32;
+        #[property(name = "some_property")]
+        async fn some_property() -> Vec<String>;
+        #[trigger(name = "tulip")]
+        async fn tulip() -> (i32, i32);
+    }
+
+    let daemon = WallpaperDaemon::new(&conn).await.unwrap();
+
+    for i in 1..10000 {
+        let info = daemon.info_wallpaper_path().await.unwrap();
+    }
+}
+
+#[cfg(all(feature = "dbus", feature = "tests", feature = "macros"))]
+#[tokio::test]
+async fn test_dbus_write() {
+    use futures_util::StreamExt;
+
+    let conn = zbus::Connection::session().await.unwrap();
+
+    #[glud_macros::glud_interface(name = "org.desktop.ui.wallpaper", blocking = false)]
+    trait WallpaperDaemon {
+        #[property(name = "wallpaper_path")]
+        async fn wallpaper_path() -> String;
+        #[property(name = "scale_mode")]
+        async fn scale_mode() -> u32;
+        #[property(name = "some_property")]
+        async fn some_property() -> Vec<String>;
+        #[trigger(name = "tulip")]
+        async fn tulip() -> (i32, i32);
+    }
+
+    let daemon = WallpaperDaemon::new(&conn).await.unwrap();
+
+    for i in 1..10000 {
+        daemon
+            .set_wallpaper_path(Some("eeee".to_string()))
+            .await
+            .unwrap();
+    }
+}
+
+#[cfg(all(feature = "dbus", feature = "tests", feature = "macros"))]
+#[tokio::test]
+async fn test_dbus_reset() {
+    use futures_util::StreamExt;
+
+    let conn = zbus::Connection::session().await.unwrap();
+
+    #[glud_macros::glud_interface(name = "org.desktop.ui.wallpaper", blocking = false)]
+    trait WallpaperDaemon {
+        #[property(name = "wallpaper_path")]
+        async fn wallpaper_path() -> String;
+        #[property(name = "scale_mode")]
+        async fn scale_mode() -> u32;
+        #[property(name = "some_property")]
+        async fn some_property() -> Vec<String>;
+        #[trigger(name = "tulip")]
+        async fn tulip() -> (i32, i32);
+    }
+
+    let daemon = WallpaperDaemon::new(&conn).await.unwrap();
+
+    let was_reset = daemon.reset_wallpaper_path().await.unwrap();
+    assert_eq!(was_reset, true);
+    assert_eq!(
+        daemon.info_wallpaper_path().await.unwrap().6,
+        (
+            false,
+            zvariant::Value::from(wallpaper_default().unwrap()).into()
+        )
+    )
+}
+
+#[cfg(all(feature = "dbus", feature = "tests", feature = "macros"))]
+#[tokio::test]
+async fn test_dbus_register() {
+    #[derive(glud_macros::Schema, Debug)]
+    #[schema(name = "org.foo.foo", version = 0.1)]
+    struct Foo {
+        #[field(
+            name = "foo_another",
+            writable = false,
+            about = "about",
+            long_about = "long about",
+            show_in_settings = true
+        )]
+        foo: u32,
+
+        #[field(default = default_with_choices, choices = choices)]
+        with_choices: i32,
+    }
+
+    fn default_with_choices() -> Option<i32> {
+        Some(5)
+    }
+
+    fn choices() -> Vec<Option<i32>> {
+        vec![Some(5), Some(9), Some(10)]
+    }
+
+    let schema = Foo::schema().unwrap();
+    
+    Foo::register_async(&schema, &zbus::Connection::session().await.unwrap())
+        .await
+        .unwrap();
 }

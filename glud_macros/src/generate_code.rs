@@ -178,14 +178,13 @@ pub fn generate_for_function(
 
             let stream = quote::quote!(
                 impl #schema_ident {
-                    pub #_async fn #info_ident #generics(&self) -> ::zbus::Result<(bool, String, String, bool, ::zbus::zvariant::OwnedSignature, (bool, ::zbus::zvariant::OwnedValue))> {
-                        self.property_proxy.call::<_, _, (bool, String, String, bool, ::zbus::zvariant::OwnedSignature, (bool, ::zbus::zvariant::OwnedValue))>("metadata", &(#schema_name, #name))#_await
+                    pub #_async fn #info_ident #generics(&self) -> ::zbus::Result<(bool, String, String, String, bool, ::zbus::zvariant::OwnedSignature, (bool, ::zbus::zvariant::OwnedValue))> {
+                        self.property_proxy.call::<_, _, (bool, String, String, String, bool, ::zbus::zvariant::OwnedSignature, (bool, ::zbus::zvariant::OwnedValue))>("metadata", &(#schema_name, #name))#_await
                     }
 
                     pub #_async fn #change_ident #generics(&self) -> ::zbus::Result<#change_ty> {
                         self.property_proxy.receive_signal_with_args("property_changed", &[(0, #schema_name), (1, #name)])#_await
                     }
-
                     pub #_async fn #set_ident #generics(&self, value: ::core::option::Option<#target_ty>) -> ::zbus::Result<()> {
                         let (is_null, value) = match value {
                             None => (true, ::zbus::zvariant::Value::from(true).to_owned()),

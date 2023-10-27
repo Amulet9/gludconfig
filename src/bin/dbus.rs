@@ -3,11 +3,15 @@ mod interface {
     use std::{collections::BTreeMap, sync::Arc};
 
     use gludconfig::{
-        error::ZbusError, property::Property, schema::Schema, storage::Storage, trigger::Trigger,
+        error::ZbusError,
+        property::Property,
+        schema::Schema,
+        storage::{into_zbus_error, Storage},
+        trigger::Trigger,
         value::Nullable,
     };
 
-    use zbus::{dbus_interface, SignalContext, names::BusName};
+    use zbus::{dbus_interface, names::BusName, SignalContext};
     use zvariant::{dbus, from_slice, OwnedSignature, OwnedValue, Signature};
 
     pub struct PropertyInterface {
@@ -33,6 +37,13 @@ mod interface {
                 .into_iter()
                 .map(<Schema as Into<SchemaInfo>>::into)
                 .collect())
+        }
+
+        #[dbus_interface(name = "register")]
+        async fn register(&self, data: Vec<u8>) -> zbus::fdo::Result<()> {
+            let ctx = zvariant::EncodingContext::<byteorder::LE>::new_dbus(0);
+            let schema: Schema = from_slice(&data, ctx).map_err(into_zbus_error)?;
+            self.storage.new_schema(&schema).await
         }
 
         #[dbus_interface(name = "metadata")]
@@ -201,7 +212,6 @@ mod interface {
             Ok(property.into())
         }
     }
-
 
     #[derive(serde::Serialize, serde::Deserialize, zvariant::Type, zvariant::Value)]
     struct PropertyInfo {

@@ -74,17 +74,17 @@ pub fn expand(stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 #schema
             }
             pub async fn register_async(schema: &::gludconfig::schema::Schema, conn: &::zbus::Connection) -> ::gludconfig::Result<()> {
-                let proxy = ::zbus::Proxy::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig", "org.glud.GludConfig").await?;
+                let proxy = ::zbus::Proxy::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig/schema", "org.glud.GludConfig.Schema").await?;
                 let ctx = ::zbus::zvariant::EncodingContext::<::byteorder::LE>::new_dbus(0);
                 let bytes = ::zbus::zvariant::to_bytes(ctx, schema)?;
-                proxy.call::<_, _, ()>("RegisterSchema", &(bytes)).await?;
+                proxy.call::<_, _, ()>("register", &(bytes)).await?;
                 Ok(())
             }
             pub fn register_sync(schema: &::gludconfig::schema::Schema, conn: &::zbus::blocking::Connection) -> ::gludconfig::Result<()> {
-                let proxy = ::zbus::blocking::Proxy::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig", "org.glud.GludConfig")?;
+                let proxy = ::zbus::blocking::Proxy::new(conn, "org.glud.GludConfig", "/org/glud/gludconfig/schema", "org.glud.GludConfig.Schema")?;
                 let ctx = ::zbus::zvariant::EncodingContext::<::byteorder::LE>::new_dbus(0);
                 let bytes = ::zbus::zvariant::to_bytes(ctx, schema)?;
-                proxy.call::<_, _, ()>("RegisterSchema", &(bytes))?;
+                proxy.call::<_, _, ()>("register", &(bytes))?;
                 Ok(())
             }
         }

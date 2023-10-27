@@ -28,9 +28,9 @@ Upon starting the dbus daemon, through the main user, it connects to `.local/sha
 # Register Schema
 
 ```rust
-#[derive(Schema, Debug)]
-#[schema(name = "org.foo.foo", version = 0.1)]
-struct Foo {
+    #[derive(glud_macros::Schema, Debug)]
+    #[schema(name = "org.foo.foo", version = 0.1)]
+    struct Foo {
     #[field(
         name = "foo_another",
         writable = false,
@@ -40,7 +40,7 @@ struct Foo {
     )]
     foo: u32,
 
-    #[field(default = default_with_choices, choices)]
+    #[field(default = default_with_choices, choices = choices)]
     with_choices: i32,
 }
 
@@ -51,6 +51,8 @@ fn default_with_choices() -> Option<i32> {
 fn choices() -> Vec<Option<i32>> {
     vec![Some(5), Some(9), Some(10)]
 }
+
+
 
 #[tokio::main]
 async fn main() -> ::gsd_rs::Result<()> {
@@ -78,10 +80,10 @@ Use
 Should generate someting like
 
 ```rust
-#[glud_interface(name = "org.foo.foo", blocking = false)]
+#[glud_macros::glud_interface(name = "org.foo.foo", blocking = false)]
 trait Foo {
-    #[property(name = "foo")]
-    async fn foo() -> u32;
+    #[property(name = "foo_another")]
+    async fn foo_another() -> u32;
     #[property(name = "with_choices")]
     async fn with_choices() -> i32;
 }
