@@ -155,7 +155,7 @@ pub fn generate_for_function(
                     }
 
                     pub #_async fn #listen_trigger_ident #generics(&self) -> ::zbus::Result<#trigger_occur_ty> {
-                        self.trigger_proxy.receive_signal("trigger_invoked")#_await
+                        self.trigger_proxy.receive_signal_with_args("trigger_invoked", &[(0, #schema_name), (1, #name)])#_await
                     }
 
                     pub #_async fn #info_ident #generics(&self) -> ::zbus::Result<(String, ::zbus::zvariant::OwnedSignature)> {

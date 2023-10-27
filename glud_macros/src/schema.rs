@@ -10,7 +10,7 @@ use syn::{Field, Fields};
 #[darling(attributes(schema))]
 struct SchemaInput {
     name: String,
-    version: f32,
+    version: u32,
 }
 
 #[derive(FromField, Debug)]
@@ -157,7 +157,7 @@ fn generate_for_property(property: PropertyInput) -> proc_macro2::TokenStream {
     let name = property
         .name
         .unwrap_or(property.ident.to_token_stream().to_string());
-        
+
     let about = property.about.unwrap_or("".to_string());
     let long_about = property.long_about.unwrap_or("".to_string());
     let show_in_settings = property.show_in_settings.unwrap_or(true);

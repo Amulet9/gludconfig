@@ -3,7 +3,9 @@ use std::collections::BTreeMap;
 use gludconfig::value::Value;
 use zvariant::OwnedValue;
 
-fn main() {}
+fn main() {
+    // a{ss} is HashMap<i32, i32>
+}
 
 #[cfg(feature = "tests")]
 #[derive(serde::Serialize, Debug, serde::Deserialize, zvariant::Type, zvariant::Value)]
@@ -14,7 +16,7 @@ enum ScaleMode {
 
 #[cfg(feature = "tests")]
 #[derive(glud_macros::Schema, Debug)]
-#[schema(name = "org.desktop.ui.wallpaper", version = 0.1)]
+#[schema(name = "org.desktop.ui.wallpaper", version = 01)]
 struct WallpaperDaemon {
     #[field(
         name = "wallpaper_path",
@@ -156,7 +158,7 @@ async fn test_update_writable_property() {
         .get_schema("org.desktop.ui.wallpaper".to_string())
         .await
         .unwrap();
-    
+
     let mut property = schema
         .properties_mut()
         .find(|p| p.name() == "wallpaper_path")
@@ -358,7 +360,7 @@ async fn test_dbus_reset() {
 #[tokio::test]
 async fn test_dbus_register() {
     #[derive(glud_macros::Schema, Debug)]
-    #[schema(name = "org.foo.foo", version = 0.1)]
+    #[schema(name = "org.foo.foo", version = 01)]
     struct Foo {
         #[field(
             name = "foo_another",

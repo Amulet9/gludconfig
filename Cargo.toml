@@ -29,11 +29,12 @@ nix = { version = "0.27.1", default-features = false, optional = true, features 
     "fs",
 ] }
 futures-util = { version = "0.3.28", optional = true }
+serde_json = { version = "1.0.107", optional = true }
 
 [features]
 default = ["cli", "macros", "tests"]
 tests = ["macros"]
-cli = ["dep:tokio", "dep:bpaf", "dbus"]
+cli = ["dep:tokio", "dep:bpaf", "dbus", "dep:serde_json"]
 macros = ["dep:glud_macros"]
 dbus = [
     "dep:tokio",

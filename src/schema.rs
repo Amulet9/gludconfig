@@ -4,7 +4,7 @@ use crate::{builder_get, property::Property, trigger::Trigger, value::Value};
 #[derive(Debug, serde::Serialize, serde::Deserialize, zvariant::Type)]
 pub struct Schema {
     name: String,
-    version: f32,
+    version: u32,
     pub(crate) properties: Vec<Property>,
     pub(crate) triggers: Vec<Trigger>,
 }
@@ -19,8 +19,8 @@ impl Schema {
     pub fn name(&self) -> &str {
         &self.name
     }
-    
-    pub fn version(&self) -> f32 {
+
+    pub fn version(&self) -> u32 {
         self.version
     }
 
@@ -53,12 +53,12 @@ impl Schema {
 pub struct SchemaBuilder {
     triggers: Vec<Trigger>,
     name: Option<String>,
-    version: Option<f32>,
+    version: Option<u32>,
     properties: Vec<Property>,
 }
 
 impl SchemaBuilder {
-    pub fn version(mut self, version: f32) -> Self {
+    pub fn version(mut self, version: u32) -> Self {
         self.version = Some(version);
         self
     }

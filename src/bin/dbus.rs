@@ -113,7 +113,7 @@ mod interface {
                     &trigger_name,
                 )))?;
             if trigger.matches(&value) {
-                Self::trigger_invoked(&ctx, schema_name, value).await?;
+                Self::trigger_invoked(&ctx, schema_name, trigger.name().to_string(), value).await?;
                 return Ok(());
             } else {
                 return Err(zbus::fdo::Error::Failed(format!(
@@ -125,7 +125,8 @@ mod interface {
         #[dbus_interface(signal, name = "trigger_invoked")]
         async fn trigger_invoked(
             ctx: &SignalContext<'_>,
-            signal: String,
+            schema: String,
+            trigger: String,
             value: OwnedValue,
         ) -> zbus::Result<()>;
     }
@@ -201,6 +202,7 @@ mod interface {
             key_name: String,
         ) -> zbus::fdo::Result<PropertyInfo> {
             let mut schema = self.storage.get_schema(schema_name.clone()).await?;
+
             let property = schema
                 .into_properties()
                 .find(|p| p.name() == &key_name)
@@ -241,7 +243,7 @@ mod interface {
     #[derive(serde::Serialize, serde::Deserialize, zvariant::Type, zvariant::Value)]
     struct SchemaInfo {
         name: String,
-        version: f64,
+        version: u32,
         triggers: Vec<String>,
         properties: Vec<String>,
     }
