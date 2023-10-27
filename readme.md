@@ -28,9 +28,9 @@ Upon starting the dbus daemon, through the main user, it connects to `.local/sha
 # Register Schema
 
 ```rust
-    #[derive(glud_macros::Schema, Debug)]
-    #[schema(name = "org.foo.foo", version = 0.1)]
-    struct Foo {
+#[derive(glud_macros::Schema, Debug)]
+#[schema(name = "org.foo.foo", version = 0.1)]
+struct Foo {
     #[field(
         name = "foo_another",
         writable = false,
