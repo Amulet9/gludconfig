@@ -6,53 +6,33 @@ pkgrel=1
 pkgdesc="GludConfig is a attempt to rewrite GSettings in rust with additional features."
 arch=('x86_64')
 url="https://github.com/Amulet9/gludconfig"
-license=('MIT')
-depends=('rust' 'cargo')
-makedepends=('git')
 
 source=("git+https://github.com/Amulet9/gludconfig.git")
 
-pkgver() {
-  cd "$srcdir/gludconfig"
-  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+prepare() {
+    export RUSTUP_TOOLCHAIN=nightly
+    cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
 }
 
 build() {
-  cd "$srcdir/gludconfig"
-  cargo build --release
+    
+    export RUSTUP_TOOLCHAIN=nightly
+    export CARGO_TARGET_DIR=target
+    cargo build --frozen --release --all-features
 }
 
 package() {
   cd "$srcdir/gludconfig"
-  install -Dm755 target/release/cli "$pkgdir/usr/bin/gludconfig"
+  install -Dm755 "${srcdir}/target/release/cli" "$pkgdir/usr/bin/gludconfig"
   install -Dm755 target/release/generate_code "$pkgdir/usr/bin/gludconfig_gen"
   install -Dm755 target/release/dbus "$pkgdir/usr/bin/gludconfig_daemon"
 }
 
-# Optional: add a cleanup function if you want to remove build artifacts
-# after the package is installed
-
-clean() {
-  cd "$srcdir/gludconfig"
-  cargo clean
+check() {
+    export RUSTUP_TOOLCHAIN=nightly
+    cargo test --frozen --all-features
 }
 
-# Optional: add package validation functions
-
-package() {
-  # Check if the required binaries are built
-  if [ ! -f "$srcdir/gludconfig/target/release/cli" ]; then
-    error "Missing 'cli' binary"
-    return 1
-  fi
-
-  if [ ! -f "$srcdir/gludconfig/target/release/generate_code" ]; then
-    error "Missing 'generate_code' binary"
-    return 1
-  fi
-
-  if [ ! -f "$srcdir/gludconfig/target/release/dbus" ]; then
-    error "Missing 'dbus' binary"
-    return 1
-  fi
+clean() {
+  remove "$srcdir/gludconfig"
 }

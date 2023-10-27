@@ -12,7 +12,7 @@ pub use zvariant;
 #[cfg(any(feature = "dbus", feature = "tests"))]
 pub mod storage;
 pub mod trigger;
-e
+
 #[macro_export]
 macro_rules! builder_get {
     ($id:ident, $var:ident, $val:expr, $builder:expr, $context:expr) => {
