@@ -13,6 +13,8 @@ struct SchemaInput {
     version: u32,
 }
 
+
+
 #[derive(FromField, Debug)]
 #[darling(attributes(trigger))]
 struct TriggerInput {
